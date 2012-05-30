@@ -208,7 +208,10 @@ class Worker
       raise NetworkError
     end
     # FIXME: catch exceptions; do something smart
+    Util.logger.info "GearmanRuby: connected, identifying as #{@client_id}"
     Util.send_request(sock, Util.pack_request(:set_client_id, @client_id))
+
+    Util.logger.info "GearmanRuby: identified, announcing abilities"
     @abilities.each {|f,a| announce_ability(sock, f, a.timeout) }
     sock
   end
@@ -225,8 +228,11 @@ class Worker
     begin
       cmd = timeout ? :can_do_timeout : :can_do
       arg = timeout ? "#{func}\0#{timeout.to_s}" : func
+      Util.logger.info "GearmanRuby: CAN_DO #{func}"
       Util.send_request(sock, Util.pack_request(cmd, arg))
     rescue Exception => ex
+      Util.logger.info "GearmanRuby: could not announce #{func} ability"
+      Util.logger.error "GearmanRuby: #{ex.inspect}"
       bad_servers << @sockets.keys.detect{|hp| @sockets[hp] == sock}
     end
   end
